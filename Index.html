@@ -1,0 +1,347 @@
+index.html.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingresos y Gastos - Taller</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f2f4f7;
+  color: #222;
+}
+
+header {
+  background: #111827;
+  color: white;
+  padding: 22px 18px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 19px;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin-top: 9px;
+  border-radius: 9px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button {
+  background: #111827;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: .9;
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.box {
+  padding: 15px;
+  border-radius: 12px;
+  background: #eef2ff;
+}
+
+.box strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.box span {
+  font-size: 21px;
+  font-weight: bold;
+}
+
+.ingreso {
+  color: #15803d;
+}
+
+.gasto {
+  color: #dc2626;
+}
+
+.saldo {
+  color: #2563eb;
+}
+
+.movimiento {
+  border-bottom: 1px solid #ddd;
+  padding: 12px 0;
+}
+
+.movimiento:last-child {
+  border-bottom: none;
+}
+
+.movimiento strong {
+  display: block;
+}
+
+.movimiento small {
+  color: #666;
+}
+
+.eliminar {
+  background: #dc2626;
+  padding: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.vacio {
+  text-align: center;
+  color: #777;
+  padding: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🔧 Ingresos y Gastos - Taller</h1>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>📊 Resumen</h2>
+
+    <div class="resumen">
+      <div class="box">
+        <strong>Ingresos</strong>
+        <span class="ingreso" id="totalIngresos">$0</span>
+      </div>
+
+      <div class="box">
+        <strong>Gastos</strong>
+        <span class="gasto" id="totalGastos">$0</span>
+      </div>
+
+      <div class="box" style="grid-column:1 / -1;">
+        <strong>Saldo</strong>
+        <span class="saldo" id="saldo">$0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>➕ Nuevo movimiento</h2>
+
+    <select id="tipo">
+      <option value="ingreso">Ingreso</option>
+      <option value="gasto">Gasto</option>
+    </select>
+
+    <input type="number" id="monto" placeholder="Monto">
+
+    <select id="categoria">
+      <option value="Trabajo">Trabajo</option>
+      <option value="Repuestos">Repuestos</option>
+      <option value="Combustible">Combustible</option>
+      <option value="Sueldos">Sueldos</option>
+      <option value="Gastos del taller">Gastos del taller</option>
+      <option value="Gastos personales">Gastos personales</option>
+      <option value="Otros">Otros</option>
+    </select>
+
+    <select id="medio">
+      <option value="Efectivo">Efectivo</option>
+      <option value="Transferencia">Transferencia</option>
+    </select>
+
+    <input type="text" id="detalle" placeholder="Detalle (opcional)">
+
+    <button onclick="agregarMovimiento()">Agregar movimiento</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 Historial</h2>
+    <div id="historial"></div>
+  </div>
+
+</div>
+
+<script>
+
+let movimientos = JSON.parse(localStorage.getItem("movimientosTaller")) || [];
+
+function guardar() {
+  localStorage.setItem(
+    "movimientosTaller",
+    JSON.stringify(movimientos)
+  );
+}
+
+function formatoPesos(numero) {
+  return "$" + Number(numero).toLocaleString("es-AR");
+}
+
+function agregarMovimiento() {
+
+  const tipo = document.getElementById("tipo").value;
+  const monto = Number(document.getElementById("monto").value);
+  const categoria = document.getElementById("categoria").value;
+  const medio = document.getElementById("medio").value;
+  const detalle = document.getElementById("detalle").value;
+
+  if (!monto || monto <= 0) {
+    alert("Ingresá un monto válido.");
+    return;
+  }
+
+  const movimiento = {
+    id: Date.now(),
+    tipo: tipo,
+    monto: monto,
+    categoria: categoria,
+    medio: medio,
+    detalle: detalle,
+    fecha: new Date().toLocaleDateString("es-AR")
+  };
+
+  movimientos.push(movimiento);
+
+  guardar();
+  actualizar();
+
+  document.getElementById("monto").value = "";
+  document.getElementById("detalle").value = "";
+}
+
+function eliminarMovimiento(id) {
+
+  if (!confirm("¿Querés eliminar este movimiento?")) {
+    return;
+  }
+
+  movimientos = movimientos.filter(
+    movimiento => movimiento.id !== id
+  );
+
+  guardar();
+  actualizar();
+}
+
+function actualizar() {
+
+  let ingresos = 0;
+  let gastos = 0;
+
+  movimientos.forEach(movimiento => {
+
+    if (movimiento.tipo === "ingreso") {
+      ingresos += movimiento.monto;
+    } else {
+      gastos += movimiento.monto;
+    }
+
+  });
+
+  const saldo = ingresos - gastos;
+
+  document.getElementById("totalIngresos").textContent =
+    formatoPesos(ingresos);
+
+  document.getElementById("totalGastos").textContent =
+    formatoPesos(gastos);
+
+  document.getElementById("saldo").textContent =
+    formatoPesos(saldo);
+
+  const historial = document.getElementById("historial");
+
+  if (movimientos.length === 0) {
+    historial.innerHTML =
+      '<div class="vacio">Todavía no hay movimientos.</div>';
+    return;
+  }
+
+  historial.innerHTML = "";
+
+  [...movimientos].reverse().forEach(movimiento => {
+
+    const div = document.createElement("div");
+
+    div.className = "movimiento";
+
+    const signo =
+      movimiento.tipo === "ingreso" ? "+" : "-";
+
+    const clase =
+      movimiento.tipo === "ingreso" ? "ingreso" : "gasto";
+
+    div.innerHTML = `
+      <strong class="${clase}">
+        ${signo} ${formatoPesos(movimiento.monto)}
+      </strong>
+
+      <small>
+        ${movimiento.fecha} ·
+        ${movimiento.categoria} ·
+        ${movimiento.medio}
+      </small>
+
+      ${movimiento.detalle
+        ? `<div>${movimiento.detalle}</div>`
+        : ""}
+
+      <button
+        class="eliminar"
+        onclick="eliminarMovimiento(${movimiento.id})">
+        Eliminar
+      </button>
+    `;
+
+    historial.appendChild(div);
+
+  });
+}
+
+actualizar();
+
+</script>
+
+</body>
+</html>
